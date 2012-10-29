@@ -1,0 +1,15 @@
+{
+    "appenders": [
+        { "type": "console" },
+        {
+            "category": "push-sender",
+            "type": "dateFile",
+            "filename": "log/push-sender.log",
+            "pattern": "yyyy-MM-dd"
+        }
+    ],
+
+    "levels": {
+        "push-sender":  "info"
+    }
+}
