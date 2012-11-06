@@ -7,17 +7,19 @@ var Thrift = require('thrift').Thrift;
 var ttypes = module.exports = {};
 ttypes.TimeLineType = {
 'Inbox' : 1,
-'Outbox' : 2,
-'ReadNotice' : 3,
-'UnReadNotice' : 4
+'Askbox' : 2,
+'AnswerBox' : 3,
+'NoticeBox' : 4
 };
 ttypes.MsgType = {
 'Comment' : 10,
 'Post' : 11
 };
 ttypes.RelationType = {
-'Followers' : 21,
-'Following' : 22
+'UserFollowers' : 21,
+'UserFollowing' : 22,
+'TopicFollowers' : 23,
+'TopicFollowing' : 24
 };
 ttypes.GradeCategory = {
 'Grade7' : 31,
@@ -30,6 +32,44 @@ ttypes.AttachType = {
 'Video' : 2,
 'Music' : 3,
 'SinaPhoto' : 4
+};
+ttypes.OtherLogin = {
+'QQ' : 41,
+'RenRen' : 42
+};
+ttypes.SubjectType = {
+'chinese' : 1,
+'math' : 2,
+'eng' : 3,
+'physics' : 4,
+'chemistry' : 5
+};
+ttypes.ReserveUID = {
+'latest' : 0,
+'chinese' : 1,
+'math' : 2,
+'eng' : 3,
+'physics' : 4,
+'chemistry' : 5,
+'chinese_7' : 11,
+'math_7' : 12,
+'eng_7' : 13,
+'physics_7' : 14,
+'chemistry_7' : 15,
+'chinese_8' : 21,
+'math_8' : 22,
+'eng_8' : 23,
+'physics_8' : 24,
+'chemistry_8' : 25,
+'chinese_9' : 31,
+'math_9' : 32,
+'eng_9' : 33,
+'physics_9' : 34,
+'chemistry_9' : 35
+};
+ttypes.MsgCounter = {
+'answer' : 1,
+'right' : 2
 };
 var Attach = module.exports.Attach = function(args) {
   this.attachtext = null;
@@ -119,12 +159,14 @@ var Msg = module.exports.Msg = function(args) {
   this.uid = null;
   this.pushlishTime = null;
   this.type = null;
-  this.category = null;
+  this.grade = null;
   this.ip = null;
   this.device = null;
   this.attachments = null;
   this.msgdesc = null;
   this.tags = null;
+  this.subject = null;
+  this.questionmid = null;
   if (args) {
     if (args.mid !== undefined) {
       this.mid = args.mid;
@@ -141,8 +183,8 @@ var Msg = module.exports.Msg = function(args) {
     if (args.type !== undefined) {
       this.type = args.type;
     }
-    if (args.category !== undefined) {
-      this.category = args.category;
+    if (args.grade !== undefined) {
+      this.grade = args.grade;
     }
     if (args.ip !== undefined) {
       this.ip = args.ip;
@@ -158,6 +200,12 @@ var Msg = module.exports.Msg = function(args) {
     }
     if (args.tags !== undefined) {
       this.tags = args.tags;
+    }
+    if (args.subject !== undefined) {
+      this.subject = args.subject;
+    }
+    if (args.questionmid !== undefined) {
+      this.questionmid = args.questionmid;
     }
   }
 };
@@ -212,7 +260,7 @@ Msg.prototype.read = function(input) {
       break;
       case 7:
       if (ftype == Thrift.Type.I32) {
-        this.category = input.readI32();
+        this.grade = input.readI32();
       } else {
         input.skip(ftype);
       }
@@ -279,6 +327,20 @@ Msg.prototype.read = function(input) {
         input.skip(ftype);
       }
       break;
+      case 13:
+      if (ftype == Thrift.Type.I32) {
+        this.subject = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 14:
+      if (ftype == Thrift.Type.STRING) {
+        this.questionmid = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
       default:
         input.skip(ftype);
     }
@@ -315,9 +377,9 @@ Msg.prototype.write = function(output) {
     output.writeI32(this.type);
     output.writeFieldEnd();
   }
-  if (this.category) {
-    output.writeFieldBegin('category', Thrift.Type.I32, 7);
-    output.writeI32(this.category);
+  if (this.grade) {
+    output.writeFieldBegin('grade', Thrift.Type.I32, 7);
+    output.writeI32(this.grade);
     output.writeFieldEnd();
   }
   if (this.ip) {
@@ -361,6 +423,16 @@ Msg.prototype.write = function(output) {
       }
     }
     output.writeListEnd();
+    output.writeFieldEnd();
+  }
+  if (this.subject) {
+    output.writeFieldBegin('subject', Thrift.Type.I32, 13);
+    output.writeI32(this.subject);
+    output.writeFieldEnd();
+  }
+  if (this.questionmid) {
+    output.writeFieldBegin('questionmid', Thrift.Type.STRING, 14);
+    output.writeString(this.questionmid);
     output.writeFieldEnd();
   }
   output.writeFieldStop();
@@ -465,6 +537,334 @@ TimeLine.prototype.write = function(output) {
       }
     }
     output.writeListEnd();
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
+var User = module.exports.User = function(args) {
+  this.phone = null;
+  this.nick = null;
+  this.password = null;
+  this.city = null;
+  this.street = null;
+  this.school = null;
+  this.grade = null;
+  this.sex = null;
+  this.uid = null;
+  this.code = null;
+  this.type = null;
+  this.money = null;
+  this.point = null;
+  this.desc = null;
+  this.tags = null;
+  this.qq = null;
+  this.renren = null;
+  if (args) {
+    if (args.phone !== undefined) {
+      this.phone = args.phone;
+    }
+    if (args.nick !== undefined) {
+      this.nick = args.nick;
+    }
+    if (args.password !== undefined) {
+      this.password = args.password;
+    }
+    if (args.city !== undefined) {
+      this.city = args.city;
+    }
+    if (args.street !== undefined) {
+      this.street = args.street;
+    }
+    if (args.school !== undefined) {
+      this.school = args.school;
+    }
+    if (args.grade !== undefined) {
+      this.grade = args.grade;
+    }
+    if (args.sex !== undefined) {
+      this.sex = args.sex;
+    }
+    if (args.uid !== undefined) {
+      this.uid = args.uid;
+    }
+    if (args.code !== undefined) {
+      this.code = args.code;
+    }
+    if (args.type !== undefined) {
+      this.type = args.type;
+    }
+    if (args.money !== undefined) {
+      this.money = args.money;
+    }
+    if (args.point !== undefined) {
+      this.point = args.point;
+    }
+    if (args.desc !== undefined) {
+      this.desc = args.desc;
+    }
+    if (args.tags !== undefined) {
+      this.tags = args.tags;
+    }
+    if (args.qq !== undefined) {
+      this.qq = args.qq;
+    }
+    if (args.renren !== undefined) {
+      this.renren = args.renren;
+    }
+  }
+};
+User.prototype = {};
+User.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+      if (ftype == Thrift.Type.STRING) {
+        this.phone = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 2:
+      if (ftype == Thrift.Type.STRING) {
+        this.nick = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 3:
+      if (ftype == Thrift.Type.STRING) {
+        this.password = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 4:
+      if (ftype == Thrift.Type.I32) {
+        this.city = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 5:
+      if (ftype == Thrift.Type.I32) {
+        this.street = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 6:
+      if (ftype == Thrift.Type.I32) {
+        this.school = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 7:
+      if (ftype == Thrift.Type.I32) {
+        this.grade = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 8:
+      if (ftype == Thrift.Type.I32) {
+        this.sex = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 9:
+      if (ftype == Thrift.Type.I32) {
+        this.uid = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 10:
+      if (ftype == Thrift.Type.STRING) {
+        this.code = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 11:
+      if (ftype == Thrift.Type.I32) {
+        this.type = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 12:
+      if (ftype == Thrift.Type.I32) {
+        this.money = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 13:
+      if (ftype == Thrift.Type.I32) {
+        this.point = input.readI32();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 14:
+      if (ftype == Thrift.Type.STRING) {
+        this.desc = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 15:
+      if (ftype == Thrift.Type.LIST) {
+        var _size24 = 0;
+        var _rtmp328;
+        this.tags = [];
+        var _etype27 = 0;
+        _rtmp328 = input.readListBegin();
+        _etype27 = _rtmp328.etype;
+        _size24 = _rtmp328.size;
+        for (var _i29 = 0; _i29 < _size24; ++_i29)
+        {
+          var elem30 = null;
+          elem30 = input.readI32();
+          this.tags.push(elem30);
+        }
+        input.readListEnd();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 16:
+      if (ftype == Thrift.Type.STRING) {
+        this.qq = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 17:
+      if (ftype == Thrift.Type.STRING) {
+        this.renren = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+User.prototype.write = function(output) {
+  output.writeStructBegin('User');
+  if (this.phone) {
+    output.writeFieldBegin('phone', Thrift.Type.STRING, 1);
+    output.writeString(this.phone);
+    output.writeFieldEnd();
+  }
+  if (this.nick) {
+    output.writeFieldBegin('nick', Thrift.Type.STRING, 2);
+    output.writeString(this.nick);
+    output.writeFieldEnd();
+  }
+  if (this.password) {
+    output.writeFieldBegin('password', Thrift.Type.STRING, 3);
+    output.writeString(this.password);
+    output.writeFieldEnd();
+  }
+  if (this.city) {
+    output.writeFieldBegin('city', Thrift.Type.I32, 4);
+    output.writeI32(this.city);
+    output.writeFieldEnd();
+  }
+  if (this.street) {
+    output.writeFieldBegin('street', Thrift.Type.I32, 5);
+    output.writeI32(this.street);
+    output.writeFieldEnd();
+  }
+  if (this.school) {
+    output.writeFieldBegin('school', Thrift.Type.I32, 6);
+    output.writeI32(this.school);
+    output.writeFieldEnd();
+  }
+  if (this.grade) {
+    output.writeFieldBegin('grade', Thrift.Type.I32, 7);
+    output.writeI32(this.grade);
+    output.writeFieldEnd();
+  }
+  if (this.sex) {
+    output.writeFieldBegin('sex', Thrift.Type.I32, 8);
+    output.writeI32(this.sex);
+    output.writeFieldEnd();
+  }
+  if (this.uid) {
+    output.writeFieldBegin('uid', Thrift.Type.I32, 9);
+    output.writeI32(this.uid);
+    output.writeFieldEnd();
+  }
+  if (this.code) {
+    output.writeFieldBegin('code', Thrift.Type.STRING, 10);
+    output.writeString(this.code);
+    output.writeFieldEnd();
+  }
+  if (this.type) {
+    output.writeFieldBegin('type', Thrift.Type.I32, 11);
+    output.writeI32(this.type);
+    output.writeFieldEnd();
+  }
+  if (this.money) {
+    output.writeFieldBegin('money', Thrift.Type.I32, 12);
+    output.writeI32(this.money);
+    output.writeFieldEnd();
+  }
+  if (this.point) {
+    output.writeFieldBegin('point', Thrift.Type.I32, 13);
+    output.writeI32(this.point);
+    output.writeFieldEnd();
+  }
+  if (this.desc) {
+    output.writeFieldBegin('desc', Thrift.Type.STRING, 14);
+    output.writeString(this.desc);
+    output.writeFieldEnd();
+  }
+  if (this.tags) {
+    output.writeFieldBegin('tags', Thrift.Type.LIST, 15);
+    output.writeListBegin(Thrift.Type.I32, this.tags.length);
+    for (var iter31 in this.tags)
+    {
+      if (this.tags.hasOwnProperty(iter31))
+      {
+        iter31 = this.tags[iter31];
+        output.writeI32(iter31);
+      }
+    }
+    output.writeListEnd();
+    output.writeFieldEnd();
+  }
+  if (this.qq) {
+    output.writeFieldBegin('qq', Thrift.Type.STRING, 16);
+    output.writeString(this.qq);
+    output.writeFieldEnd();
+  }
+  if (this.renren) {
+    output.writeFieldBegin('renren', Thrift.Type.STRING, 17);
+    output.writeString(this.renren);
     output.writeFieldEnd();
   }
   output.writeFieldStop();

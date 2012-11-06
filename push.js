@@ -31,10 +31,19 @@ var kestrelPool = poolModule.Pool({
     idleTimeoutMillis : 10,  //超时时间
     log : true
 });
-
 var configServer = [{host:conf.tair.ip, port: conf.tair.port}];
-var tairClient = new tair('group_1', configServer, function (err){ if (err) { log.error(err); }});
+var tairPool = poolModule.Pool({
+    name: "tair",
+    create : function(callback){
+        var tairClient = new tair('group_1', configServer, function (err){ if (err) { log.error(err); }});
+        callback(null,tairClient);
+    }  ,
+    destroy  : function(client) { }, //当超时则释放连接
+    max      : 10,   //最大连接数
+    idleTimeoutMillis : 10,  //超时时间
+    log : true
+});
 
 var push_sender = require("./push-sender").push_sender;
 
-setInterval(push_sender(kestrelPool,tair),500)
+setInterval(push_sender(kestrelPool,tairPool),500)
